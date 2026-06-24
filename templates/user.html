@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola Karyawan | PT. Gochem Globalindo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased">
+
+    <button id="menuBtn" class="md:hidden fixed top-4 left-4 z-50 bg-white p-2 rounded-lg shadow-md border">
+        <i data-lucide="menu" class="w-6 h-6"></i>
+    </button>
+
+    <div class="flex min-h-screen">
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 hidden w-64 bg-white border-r border-slate-200 p-6 shadow-xl md:flex md:flex-col md:static md:shadow-none">
+            <div class="flex items-center gap-3 mb-10 px-2 mt-2 md:mt-0">
+                <i data-lucide="shield-check" class="text-indigo-600 w-8 h-8"></i>
+                <span class="text-xl font-bold text-indigo-900">GOCHEM</span>
+            </div>
+            <nav class="space-y-2 flex-1">
+                <a href="/" class="flex items-center gap-3 text-slate-500 hover:bg-slate-50 p-4 rounded-xl transition">
+                    <i data-lucide="layout-dashboard" class="w-5"></i> Dashboard
+                </a>
+                <a href="/user" class="flex items-center gap-3 bg-indigo-50 text-indigo-700 p-4 rounded-xl font-semibold">
+                    <i data-lucide="users" class="w-5"></i> Karyawan
+                </a>
+            </nav>
+            <a href="/logout" class="flex items-center gap-3 text-red-500 hover:bg-red-50 p-4 rounded-xl transition">
+                <i data-lucide="log-out" class="w-5"></i> Logout
+            </a>
+        </aside>
+
+        <main class="flex-1 p-6 md:p-12 overflow-hidden w-full">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4 mt-12 md:mt-0">
+                    <div>
+                        <h2 class="text-3xl font-bold">Data Karyawan</h2>
+                        <p class="text-slate-500">Manajemen staf PT. Gochem Globalindo</p>
+                    </div>
+                    <button onclick="openAddModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-indigo-100">
+                        <i data-lucide="user-plus" class="w-5"></i> Tambah Karyawan
+                    </button>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50 border-b">
+                                <tr>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Karyawan</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">NIK</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Jabatan</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                {% for u in users %}
+                                <tr>
+                                    <td class="px-6 py-4 flex items-center gap-4">
+                                        <img src="{{ url_for('static', filename='profiles/' + (u.foto_profil if u.foto_profil else 'default.jpg')) }}" class="w-12 h-12 rounded-xl object-cover border">
+                                        <div>
+                                            <div class="font-bold text-slate-900">{{ u.nama_lengkap }}</div>
+                                            <div class="text-xs text-slate-400 font-mono">@{{ u.username }}</div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 font-mono">{{ u.nik }}</td>
+                                    <td class="px-6 py-4">{{ u.jabatan }}</td>
+                                    <td class="px-6 py-4 text-right">
+                                        <button onclick="openEditModal({{ u.id }}, '{{ u.nama_lengkap }}', '{{ u.username }}', '{{ u.nik }}', '{{ u.jabatan }}', '{{ u.role }}', '{{ u.gender }}')" class="text-indigo-600 font-bold text-sm px-3 py-1 hover:bg-indigo-50 rounded-lg">Edit</button>
+                                        <a href="/delete_user/{{ u.id }}" onclick="return confirm('Yakin hapus?')" class="text-red-500 font-bold text-sm px-3 py-1 hover:bg-red-50 rounded-lg">Hapus</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="modal" class="fixed inset-0 bg-slate-900/40 hidden backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-3xl w-full max-w-md shadow-2xl overflow-y-auto max-h-[90vh]">
+            <h3 id="modalTitle" class="text-xl font-bold mb-6">Tambah Karyawan</h3>
+            <form id="userForm" action="/add_user" method="POST" enctype="multipart/form-data" class="space-y-4">
+                <input type="hidden" name="user_id" id="user_id">
+                
+                <label class="block text-sm text-slate-500 mb-1">Foto Profil</label>
+                <input type="file" name="foto" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-700">
+                
+                <input type="text" name="nama_lengkap" id="nama_lengkap" placeholder="Nama Lengkap" class="w-full bg-slate-50 border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500" required>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" name="username" id="username" placeholder="Username" class="w-full bg-slate-50 border rounded-xl px-4 py-3 outline-none" required>
+                    <input type="text" name="nik" id="nik" placeholder="NIK" class="w-full bg-slate-50 border rounded-xl px-4 py-3 outline-none" required>
+                </div>
+                
+                <input type="password" name="password" placeholder="Password (Kosongkan jika tidak ubah)" class="w-full bg-slate-50 border rounded-xl px-4 py-3 outline-none">
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <select name="gender" id="gender" class="w-full bg-slate-50 border rounded-xl px-4 py-3 outline-none">
+                        <option value="L">Laki-laki</option>
+                        <option value="P">Perempuan</option>
+                    </select>
+                    <select name="role" id="role" class="w-full bg-slate-50 border rounded-xl px-4 py-3 outline-none">
+                        <option value="karyawan">Karyawan</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                
+                <input type="text" name="jabatan" id="jabatan" placeholder="Jabatan" class="w-full bg-slate-50 border rounded-xl px-4 py-3 outline-none" required>
+                
+                <div class="flex gap-3 mt-6">
+                    <button type="button" onclick="closeModal()" class="flex-1 py-3 text-slate-500 font-bold hover:bg-slate-100 rounded-xl">Batal</button>
+                    <button type="submit" class="flex-1 bg-indigo-600 text-white rounded-xl font-bold py-3 hover:bg-indigo-700">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        
+        // Toggle Sidebar Mobile
+        const menuBtn = document.getElementById('menuBtn');
+        const sidebar = document.getElementById('sidebar');
+        menuBtn.addEventListener('click', () => { sidebar.classList.toggle('hidden'); });
+
+        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+        
+        function openAddModal() {
+            document.getElementById('modalTitle').innerText = "Tambah Karyawan";
+            document.getElementById('userForm').action = "/add_user";
+            document.getElementById('userForm').reset();
+            document.getElementById('modal').classList.remove('hidden');
+        }
+        
+        function openEditModal(id, nama, user, nik, jab, role, gender) {
+            document.getElementById('modalTitle').innerText = "Edit Karyawan";
+            document.getElementById('userForm').action = "/edit_user";
+            document.getElementById('user_id').value = id;
+            document.getElementById('nama_lengkap').value = nama;
+            document.getElementById('username').value = user;
+            document.getElementById('nik').value = nik;
+            document.getElementById('jabatan').value = jab;
+            document.getElementById('role').value = role;
+            document.getElementById('gender').value = gender;
+            document.getElementById('modal').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
