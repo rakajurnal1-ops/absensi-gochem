@@ -3,148 +3,384 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dashboard | PT. Gochem Globalindo</title>
+    <title>Gochem Workspace</title>
+    
+    <!-- Font Premium ala Startup Tech -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-</head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: { brand: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 900: '#312e81' } }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body.sidebar-open { overflow: hidden; }
+        .smooth { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .glass-panel { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.5); }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
 
-    <div class="md:hidden flex justify-between items-center p-4 bg-white border-b border-slate-200">
+        /* Trik Khusus Layar HP (Mobile Responsive) */
+        @media (max-width: 767px) {
+            html, body {
+                height: auto !important;
+                min-height: 100vh !important;
+                overflow-y: auto !important;
+                overflow-x: hidden !important;
+            }
+            main {
+                height: auto !important;
+                overflow: visible !important;
+                padding-bottom: 2rem !important; 
+            }
+            main > div.flex-1 {
+                height: auto !important;
+                overflow: visible !important;
+            }
+            #cameraContainer, #cameraPlaceholder {
+                min-height: 280px !important;
+            }
+            .truncate.max-w-\[200px\] {
+                white-space: normal !important;
+                max-width: 100% !important;
+                display: -webkit-box !important;
+                -webkit-line-clamp: 2 !important;
+                -webkit-box-orient: vertical !important;
+            }
+        }
+
+        /* Trik Khusus Layar Tablet/Desktop (Mengatasi teks terpotong) */
+        @media (min-width: 768px) {
+            .md\:max-w-\[300px\] {
+                white-space: normal !important;
+                max-width: 100% !important;
+                display: -webkit-box !important;
+                -webkit-line-clamp: 2 !important;
+                -webkit-box-orient: vertical !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased h-screen w-full flex overflow-hidden selection:bg-brand-500 selection:text-white">
+
+    <!-- Mobile Top Bar -->
+    <div class="md:hidden fixed top-0 w-full glass-panel z-50 px-4 py-3 flex justify-between items-center shadow-sm">
         <div class="flex items-center gap-2">
-            <i data-lucide="shield-check" class="text-indigo-600 w-6 h-6"></i>
-            <span class="font-bold text-indigo-900">GOCHEM</span>
+            <div class="bg-gradient-to-br from-brand-500 to-purple-600 p-1.5 rounded-lg text-white"><i data-lucide="hexagon" class="w-5 h-5"></i></div>
+            <span class="font-extrabold tracking-tight text-slate-900">GOCHEM</span>
         </div>
-        <button onclick="toggleSidebar()" class="p-2 text-slate-600">
-            <i data-lucide="menu" class="w-6 h-6"></i>
-        </button>
+        <button onclick="toggleSidebar()" class="p-2 bg-white rounded-full shadow-sm hover:scale-105 smooth"><i data-lucide="menu" class="w-5 h-5 text-slate-700"></i></button>
     </div>
 
-    <div class="flex min-h-screen">
-        <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 p-6 transform -translate-x-full md:translate-x-0 transition-transform duration-200 ease-in-out md:static md:w-64 flex flex-col">
-            <div class="flex justify-between items-center mb-8">
-                <div class="flex items-center gap-2">
-                    <i data-lucide="shield-check" class="text-indigo-600 w-8 h-8"></i>
-                    <span class="text-xl font-bold text-indigo-900">GOCHEM</span>
-                </div>
-                <button onclick="toggleSidebar()" class="md:hidden p-1 text-slate-500">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
-            </div>
+    <!-- Floating Sidebar (Desktop) / Drawer (Mobile) -->
+    <aside id="sidebar" class="fixed md:static inset-y-0 left-0 z-[60] w-72 md:w-24 lg:w-64 transform -translate-x-full md:translate-x-0 smooth flex flex-col p-4">
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 h-full flex flex-col overflow-hidden">
             
-            <nav class="flex flex-col space-y-2 flex-1">
-                <a href="/" class="flex items-center gap-3 bg-indigo-50 text-indigo-700 p-3 rounded-xl font-semibold">
-                    <i data-lucide="layout-dashboard" class="w-5"></i> Dashboard
+            <!-- Logo -->
+            <div class="p-6 flex items-center justify-between md:justify-center lg:justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="bg-gradient-to-br from-brand-500 to-purple-600 p-2 rounded-xl text-white shadow-lg shadow-brand-500/30">
+                        <i data-lucide="hexagon" class="w-6 h-6"></i>
+                    </div>
+                    <span class="font-extrabold text-xl tracking-tight text-slate-900 md:hidden lg:block">GOCHEM</span>
+                </div>
+                <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <!-- Nav -->
+            <nav class="flex-1 px-4 space-y-2 mt-4">
+                <a href="/" class="flex items-center gap-3 md:justify-center lg:justify-start bg-slate-900 text-white px-4 py-3.5 rounded-2xl font-bold shadow-md smooth hover:scale-[1.02] group">
+                    <i data-lucide="layout-grid" class="w-5 h-5 text-brand-500 group-hover:animate-pulse"></i>
+                    <span class="md:hidden lg:block">Workspace</span>
                 </a>
+                
                 {% if current_user.role == 'admin' %}
-                <a href="/user" class="flex items-center gap-3 text-slate-500 hover:bg-slate-50 p-3 rounded-xl transition">
-                    <i data-lucide="users" class="w-5"></i> Karyawan
+                <a href="/user" class="flex items-center gap-3 md:justify-center lg:justify-start text-slate-500 hover:bg-slate-50 hover:text-brand-600 px-4 py-3.5 rounded-2xl font-semibold smooth">
+                    <i data-lucide="users-round" class="w-5 h-5"></i>
+                    <span class="md:hidden lg:block">Team</span>
                 </a>
                 {% endif %}
             </nav>
-            <a href="/logout" class="flex items-center gap-3 text-red-500 p-3 hover:bg-red-50 rounded-xl transition">
-                <i data-lucide="log-out" class="w-5"></i> Logout
-            </a>
-        </aside>
 
-        <div id="overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/20 z-40 hidden md:hidden"></div>
+            <!-- User Menu Bottom -->
+            <div class="p-4 border-t border-slate-100">
+                <a href="/logout" class="flex items-center gap-3 md:justify-center lg:justify-start text-red-500 hover:bg-red-50 px-4 py-3 rounded-2xl font-bold smooth group">
+                    <i data-lucide="log-out" class="w-5 h-5 group-hover:-translate-x-1 smooth"></i>
+                    <span class="md:hidden lg:block">Logout</span>
+                </a>
+            </div>
+        </div>
+    </aside>
 
-        <main class="flex-1 p-4 md:p-12 w-full overflow-hidden">
-            <div class="max-w-5xl mx-auto">
-                <header class="flex flex-col md:flex-row justify-between mb-6 gap-4">
-                    <div>
-                        <h2 class="text-2xl font-bold">Dashboard</h2>
-                        <p class="text-slate-500 text-sm">Sistem Absensi PT Gochem Globalindo</p>
+    <!-- Overlay Mobile -->
+    <div id="overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-50 hidden md:hidden smooth"></div>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 h-full pt-16 md:pt-4 p-4 md:pr-4 md:pl-0 flex flex-col gap-4 overflow-hidden">
+        
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="shrink-0 flex flex-col gap-2">
+                {% for message in messages %}
+                    <div class="bg-emerald-500 text-white px-4 py-3 rounded-2xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-emerald-500/20">
+                        <i data-lucide="check-circle" class="w-5 h-5"></i> {{ message }}
                     </div>
-                    <div id="clock" class="bg-white border px-4 py-2 rounded-full font-mono font-bold text-slate-700 shadow-sm self-start">00:00:00</div>
-                </header>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
 
-                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center gap-4 mb-6">
-                    <div class="relative">
-                        <img src="{{ url_for('static', filename='profiles/' + (current_user.foto_profil if current_user.foto_profil else 'default.jpg')) }}" 
-                             class="w-20 h-20 rounded-2xl object-cover shadow-lg border-4 border-slate-50">
+        <!-- Bento Grid Layout -->
+        <div class="flex-1 overflow-y-auto hide-scroll flex flex-col gap-4 pb-10 md:pb-0">
+            
+            <!-- Top Section: Greeting & Profile (Bento Row 1) -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 shrink-0">
+                
+                <!-- Greeting Card (Gradient) -->
+                <div class="lg:col-span-2 bg-gradient-to-r from-slate-900 to-slate-800 rounded-3xl p-6 md:p-8 flex flex-col justify-between relative overflow-hidden shadow-sm group">
+                    <div class="absolute -right-10 -top-10 w-48 h-48 bg-brand-500/20 rounded-full blur-3xl group-hover:bg-brand-500/40 smooth"></div>
+                    <div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="bg-white/10 text-brand-100 text-xs font-bold px-3 py-1 rounded-full border border-white/10 backdrop-blur-md flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span> PT. Gochem Globalindo
+                            </span>
+                        </div>
+                        <h1 class="text-2xl md:text-4xl font-extrabold text-white tracking-tight leading-tight mt-4">
+                            Siap berkreasi hari ini,<br><span class="text-white font-extrabold tracking-tight">{{ current_user.nama_lengkap.split(' ')[0] }}!</span>
+                        </h1>
+                    </div>
+                    <div class="mt-6 flex items-center gap-4 text-slate-300 text-sm font-medium">
+                        <div class="flex items-center gap-1.5"><i data-lucide="calendar" class="w-4 h-4 text-brand-400"></i> <span id="dateDisplay">Memuat...</span></div>
+                        <div class="flex items-center gap-1.5"><i data-lucide="clock" class="w-4 h-4 text-brand-400"></i> <span id="clock" class="font-mono">00:00</span></div>
+                    </div>
+                </div>
+
+                <!-- Profile Card (Minimalist) -->
+                <div class="bg-white rounded-3xl p-6 flex flex-col items-center justify-center text-center shadow-sm border border-slate-200 relative">
+                    <div class="relative mb-4 group">
+                        <div class="w-20 h-20 rounded-full p-1 bg-gradient-to-tr from-brand-500 to-purple-500">
+                            <img src="{{ url_for('static', filename='profiles/' + (current_user.foto_profil if current_user.foto_profil else 'default.jpg')) }}" class="w-full h-full rounded-full object-cover border-4 border-white">
+                        </div>
                         <form action="/update_profile_photo" method="POST" enctype="multipart/form-data" class="absolute -bottom-1 -right-1">
                             <input type="file" name="file" id="file" class="hidden" onchange="this.form.submit()">
-                            <label for="file" class="bg-indigo-600 p-1.5 rounded-full text-white cursor-pointer shadow-md"><i data-lucide="camera" class="w-3 h-3"></i></label>
+                            <label for="file" class="bg-slate-900 text-white p-2 rounded-full cursor-pointer hover:scale-110 smooth shadow-lg block">
+                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                            </label>
                         </form>
                     </div>
-                    <div class="text-center sm:text-left">
-                        <h1 class="text-xl font-bold">{{ current_user.nama_lengkap }}</h1>
-                        <p class="text-slate-500 text-sm">{{ current_user.jabatan }} | NIK: {{ current_user.nik }}</p>
-                    </div>
-                </div>
-
-                <div id="cameraContainer" class="hidden mb-6">
-                    <div class="bg-slate-900 rounded-3xl overflow-hidden aspect-video relative border-4 border-white shadow-xl">
-                        <video id="video" autoplay playsinline class="w-full h-full object-cover"></video>
-                        <div class="absolute top-3 left-3 bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse">LIVE</div>
-                    </div>
-                </div>
-
-                <button id="actionButton" onclick="handleAbsen()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg mb-8 flex items-center justify-center gap-2">
-                    <span id="btnIcon"><i data-lucide="camera" class="w-5"></i></span>
-                    <span id="btnText">Mulai Absen</span>
-                </button>
-
-                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                    <h3 class="font-bold mb-4">Log Hari Ini</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left min-w-[400px]">
-                            <thead>
-                                <tr class="text-slate-400 text-[10px] uppercase">
-                                    <th class="pb-3">Waktu</th>
-                                    <th class="pb-3">Lokasi</th>
-                                    <th class="pb-3 text-right">Foto</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100 text-sm">
-                                {% for log in logs %}
-                                <tr>
-                                    <td class="py-3 font-mono">{{ log.timestamp.split(' ')[1] }}</td>
-                                    <td class="py-3 text-slate-600 truncate max-w-[150px]">{{ log.location_name }}</td>
-                                    <td class="py-3 text-right">
-                                        <button onclick="showDetail('{{ url_for('static', filename='uploads/' + log.image_path) }}')" class="text-indigo-600 font-bold">Lihat</button>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                    <h2 class="font-bold text-lg text-slate-900">{{ current_user.nama_lengkap }}</h2>
+                    <p class="text-brand-600 font-semibold text-xs uppercase tracking-wider mb-2">{{ current_user.jabatan }}</p>
+                    <div class="bg-slate-100 text-slate-500 text-[10px] font-mono px-3 py-1 rounded-lg">ID: {{ current_user.nik }}</div>
                 </div>
             </div>
-        </main>
-    </div>
 
-    <div id="photoModal" class="fixed inset-0 bg-slate-900/50 hidden flex items-center justify-center p-4 backdrop-blur-sm z-50">
-        <div class="bg-white p-4 rounded-3xl max-w-sm w-full">
-            <img id="detailImg" src="" class="rounded-2xl w-full">
-            <button onclick="document.getElementById('photoModal').classList.add('hidden')" class="w-full mt-4 py-3 bg-slate-900 text-white rounded-xl font-bold">Tutup</button>
+            <!-- Bottom Section: Action & History (Bento Row 2) -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
+                
+                <!-- Action / Camera Card -->
+                <div class="lg:col-span-1 bg-white rounded-3xl p-2 border border-slate-200 shadow-sm flex flex-col h-full relative overflow-hidden">
+                    
+                    <!-- Area Kamera -->
+                    <div id="cameraContainer" class="hidden flex-1 w-full bg-slate-900 rounded-[1.25rem] relative overflow-hidden mb-2">
+                        <video id="video" autoplay playsinline class="w-full h-full object-cover transform scale-x-[-1]"></video>
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/50 to-transparent pointer-events-none"></div>
+                        
+                        <!-- UI Scanner Estetik -->
+                        <div class="absolute inset-4 border-2 border-white/20 rounded-2xl pointer-events-none flex flex-col justify-between p-2">
+                            <div class="flex justify-between w-full"><div class="w-6 h-6 border-t-2 border-l-2 border-brand-400 rounded-tl-lg"></div><div class="w-6 h-6 border-t-2 border-r-2 border-brand-400 rounded-tr-lg"></div></div>
+                            <div class="flex justify-between w-full"><div class="w-6 h-6 border-b-2 border-l-2 border-brand-400 rounded-bl-lg"></div><div class="w-6 h-6 border-b-2 border-r-2 border-brand-400 rounded-br-lg"></div></div>
+                        </div>
+                    </div>
+
+                    <!-- Placeholder sebelum kamera aktif -->
+                    <div id="cameraPlaceholder" class="flex-1 flex flex-col items-center justify-center p-6 text-slate-400">
+                        <div class="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mb-4">
+                            <i data-lucide="scan-face" class="w-8 h-8 text-slate-300"></i>
+                        </div>
+                        <p class="text-sm font-medium text-center">Sistem presensi terintegrasi GPS & Kamera</p>
+                    </div>
+
+                    <!-- Tombol Aksi -->
+                    <button id="actionButton" onclick="handleAbsen()" class="w-full bg-slate-900 hover:bg-brand-600 text-white font-bold py-4 rounded-[1.25rem] flex items-center justify-center gap-2 smooth active:scale-[0.98] shrink-0 z-10">
+                        <span id="btnIcon"><i data-lucide="fingerprint" class="w-5 h-5"></i></span>
+                        <span id="btnText" class="text-sm">Mulai Absensi</span>
+                    </button>
+                </div>
+
+                <!-- History Card -->
+                <div class="lg:col-span-2 bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden">
+                    <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-white shrink-0 z-10">
+                        <h3 class="font-bold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="activity" class="w-5 h-5 text-brand-500"></i> Log Aktivitas Hari Ini
+                        </h3>
+                        <span class="text-xs font-bold bg-slate-100 text-slate-500 px-3 py-1 rounded-full">{{ logs|length }} Entri</span>
+                    </div>
+                    
+                    <div class="flex-1 overflow-y-auto hide-scroll p-2">
+                        {% if logs %}
+                            <div class="flex flex-col gap-2">
+                                {% for log in logs %}
+                                <div class="bg-slate-50 hover:bg-brand-50 p-4 rounded-2xl flex items-center justify-between gap-4 smooth group border border-transparent hover:border-brand-100">
+                                    <div class="flex items-center gap-4 overflow-hidden">
+                                        <div class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center shrink-0 border border-slate-200 group-hover:border-brand-200 group-hover:text-brand-600 smooth">
+                                            <i data-lucide="check" class="w-5 h-5"></i>
+                                        </div>
+                                        <div class="overflow-hidden">
+                                            <p class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                                                {{ log.timestamp.split(' ')[1] }}
+                                            </p>
+                                            <p class="text-xs text-slate-500 truncate mt-0.5 max-w-[200px] md:max-w-[300px]" title="{{ log.location_name }}">
+                                                {{ log.location_name }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button onclick="showDetail('{{ url_for('static', filename='uploads/' + log.image_path) }}')" class="shrink-0 w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-600 flex items-center justify-center hover:bg-slate-900 hover:text-white hover:border-slate-900 smooth shadow-sm" title="Lihat Bukti Foto">
+                                        <i data-lucide="image" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="h-full flex flex-col items-center justify-center text-slate-400">
+                                <i data-lucide="coffee" class="w-10 h-10 mb-3 text-slate-300"></i>
+                                <p class="text-sm font-semibold text-slate-500">Area kerja masih bersih.</p>
+                                <p class="text-xs mt-1">Lakukan absensi untuk memulai hari.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Foto (Glassmorphism) -->
+    <div id="photoModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md hidden flex items-center justify-center p-4 z-[70] opacity-0 transition-opacity duration-300">
+        <div class="bg-white p-2 rounded-[2rem] max-w-sm w-full transform scale-95 transition-transform duration-300 shadow-2xl relative" id="photoModalContent">
+            <img id="detailImg" src="" class="rounded-3xl w-full object-cover shadow-inner">
+            <button onclick="closeModal()" class="absolute top-4 right-4 bg-slate-900/40 backdrop-blur-md text-white p-2 rounded-full hover:bg-red-500 smooth shadow-lg">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div class="p-2 pt-4 text-center text-xs font-bold text-slate-400 uppercase tracking-widest">Bukti Kehadiran</div>
         </div>
     </div>
+    
     <canvas id="canvas" class="hidden"></canvas>
 
     <script>
         lucide.createIcons();
+
+        // Date & Time Logic
+        function updateDateTime() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', { hour12: false, hour: '2-digit', minute: '2-digit' });
+            const options = { weekday: 'long', day: 'numeric', month: 'short' };
+            document.getElementById('dateDisplay').innerText = now.toLocaleDateString('id-ID', options);
+        }
+        setInterval(updateDateTime, 1000); updateDateTime();
+
+        // Sidebar Mobile
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('-translate-x-full');
             document.getElementById('overlay').classList.toggle('hidden');
         }
-        // ... (sisanya fungsi handleAbsen dan lainnya sama)
-        const video = document.getElementById('video'), canvas = document.getElementById('canvas'), container = document.getElementById('cameraContainer'), btn = document.getElementById('actionButton'), btnText = document.getElementById('btnText'), btnIcon = document.getElementById('btnIcon');
+
+        // Modal Logic
+        function showDetail(path) {
+            const modal = document.getElementById('photoModal');
+            const content = document.getElementById('photoModalContent');
+            document.getElementById('detailImg').src = path;
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
+        }
+        function closeModal() {
+            const modal = document.getElementById('photoModal');
+            const content = document.getElementById('photoModalContent');
+            modal.classList.add('opacity-0'); content.classList.add('scale-95');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
+
+        // Camera & Absen Logic
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const container = document.getElementById('cameraContainer');
+        const placeholder = document.getElementById('cameraPlaceholder');
+        const btn = document.getElementById('actionButton');
+        const btnText = document.getElementById('btnText');
+        const btnIcon = document.getElementById('btnIcon');
         let isCameraOn = false;
+
         async function handleAbsen() {
             if (!isCameraOn) {
-                try { const stream = await navigator.mediaDevices.getUserMedia({ video: true }); video.srcObject = stream; container.classList.remove('hidden'); btnText.innerText = "Konfirmasi & Kirim"; isCameraOn = true; } catch (err) { alert("Akses kamera ditolak!"); }
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                    video.srcObject = stream;
+                    
+                    placeholder.classList.add('hidden');
+                    container.classList.remove('hidden');
+                    container.classList.add('flex');
+                    
+                    btn.classList.replace('bg-slate-900', 'bg-brand-600');
+                    btnText.innerText = "Kirim Data Presensi";
+                    btnIcon.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i>';
+                    lucide.createIcons();
+                    isCameraOn = true;
+                } catch (err) {
+                    alert("Akses kamera dibutuhkan untuk melanjutkan.");
+                }
             } else {
-                btn.disabled = true; btnText.innerText = "Memproses...";
+                btn.disabled = true;
+                btn.classList.replace('bg-brand-600', 'bg-slate-800');
+                btnText.innerText = "Mendeteksi Lokasi...";
+                btnIcon.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>`;
+                lucide.createIcons();
+
                 navigator.geolocation.getCurrentPosition(async (pos) => {
-                    canvas.width = video.videoWidth; canvas.height = video.videoHeight; canvas.getContext('2d').drawImage(video, 0, 0);
-                    const res = await fetch('/absen', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ image: canvas.toDataURL('image/jpeg'), latitude: pos.coords.latitude, longitude: pos.coords.longitude }) });
-                    const data = await res.json(); alert(data.message); location.reload();
-                }, (err) => { alert("Aktifkan GPS!"); btn.disabled = false; btnText.innerText = "Konfirmasi & Kirim"; });
+                    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
+                    ctx.drawImage(video, 0, 0);
+                    
+                    try {
+                        const res = await fetch('/absen', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                image: canvas.toDataURL('image/jpeg', 0.8),
+                                latitude: pos.coords.latitude,
+                                longitude: pos.coords.longitude
+                            })
+                        });
+                        const data = await res.json();
+                        alert(data.message); location.reload(); 
+                    } catch (err) {
+                        alert("Gagal menghubungi server."); resetButton();
+                    }
+                }, (err) => {
+                    alert("Nyalakan GPS untuk memvalidasi lokasi Anda."); resetButton();
+                }, { enableHighAccuracy: true, timeout: 15000 });
             }
         }
-        function showDetail(path) { document.getElementById('detailImg').src = path; document.getElementById('photoModal').classList.remove('hidden'); }
-        setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString(), 1000);
+
+        function resetButton() {
+            btn.disabled = false;
+            btn.classList.replace('bg-slate-800', 'bg-brand-600');
+            btnText.innerText = "Kirim Data Presensi";
+            btnIcon.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i>';
+            lucide.createIcons();
+        }
     </script>
 </body>
 </html>

@@ -5,48 +5,86 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Login | PT. Gochem Globalindo</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        input:focus { outline: none; }
+    </style>
 </head>
 <body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
 
-    <div class="w-full max-w-md bg-white p-6 sm:p-10 rounded-3xl shadow-sm border border-slate-200">
+    <div id="login-card" class="glass-card w-full max-w-sm p-8 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-100 transition-all duration-500">
+        
         <div class="mb-8 text-center">
-            <h1 class="text-2xl sm:text-3xl font-bold text-indigo-900 mb-2">PT. Gochem Globalindo</h1>
-            <p class="text-slate-500 font-medium text-sm sm:text-base">Sistem Absensi Terintegrasi</p>
+            <div class="w-14 h-14 bg-indigo-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-indigo-200">
+                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            </div>
+            <h1 class="text-xl font-bold text-slate-900">PT. Gochem Globalindo</h1>
+            <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Sistem Absensi Terintegrasi</p>
         </div>
 
         {% with messages = get_flashed_messages() %}
             {% if messages %}
                 {% for message in messages %}
-                    <div class="mb-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-xl text-sm text-center font-medium">
+                    <div class="mb-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-2xl text-[11px] font-bold text-center animate-pulse">
                         {{ message }}
                     </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
 
-        <form action="/login" method="POST" class="space-y-5">
+        <form action="/login" method="POST" id="loginForm" class="space-y-4">
             <div>
-                <label class="block text-sm font-bold text-slate-700 mb-2">Username</label>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-2">Username</label>
                 <input type="text" name="username" required
-                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-3.5 text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 outline-none transition-all duration-300">
+                    class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm transition-all focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10">
             </div>
 
             <div>
-                <label class="block text-sm font-bold text-slate-700 mb-2">Password</label>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-2">Password</label>
                 <input type="password" name="password" required
-                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-3.5 text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 outline-none transition-all duration-300">
+                    class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm transition-all focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10">
             </div>
 
-            <button type="submit" 
-                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl transition-all duration-300 shadow-lg shadow-indigo-100 transform active:scale-[0.98]">
-                Masuk Sekarang
+            <button type="submit" id="submitBtn"
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-indigo-200 active:scale-[0.98] flex items-center justify-center gap-2">
+                <span id="btnText">Masuk Sekarang</span>
             </button>
         </form>
 
         <div class="mt-8 text-center">
-            <p class="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">© 2026 PT. Gochem Globalindo</p>
+            <p class="text-[9px] text-slate-300 uppercase tracking-widest font-bold">© 2026 KAMA</p>
         </div>
     </div>
 
+    <script>
+        const form = document.getElementById('loginForm');
+        const btn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+
+        form.addEventListener('submit', function() {
+            // Mengubah tampilan tombol menjadi status loading
+            btn.disabled = true;
+            btn.classList.add('bg-indigo-700'); // Sedikit lebih gelap saat proses
+            btnText.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <svg class="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    Memproses...
+                </div>
+            `;
+            
+            // Tambahan: Memberikan pesan singkat sebelum redirect (optional)
+            // Ini akan muncul tepat sebelum browser berpindah halaman
+            setTimeout(() => {
+                btnText.innerHTML = "Login Berhasil!";
+            }, 800);
+        });
+        
+    </script>
 </body>
 </html>

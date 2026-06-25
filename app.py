@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from functools import wraps
@@ -7,6 +7,7 @@ import base64
 from datetime import datetime
 from geopy.geocoders import Nominatim
 from werkzeug.utils import secure_filename
+from fpdf import FPDF
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'gochem_globalindo_2026_pro_secure'
@@ -38,7 +39,7 @@ class User(UserMixin, db.Model):
     jabatan = db.Column(db.String(50))
     foto_profil = db.Column(db.String(200), default='default.jpg')
     
-    attendances = db.relationship('Attendance', backref='karyawan', lazy=True)
+    attendances = db.relationship('Attendance', backref='karyawan', lazy=True, cascade="all, delete-orphan")
 
 class Attendance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -76,7 +77,7 @@ def login():
         if user and user.password == request.form.get('password'):
             login_user(user)
             return redirect(url_for('index'))
-        flash('Login Gagal!')
+        flash('Login Gagal! Username atau password salah.')
     return render_template('login.html')
 
 @app.route('/')
@@ -94,7 +95,15 @@ def update_profile_photo():
     if 'file' in request.files:
         file = request.files['file']
         if file.filename != '':
-            filename = secure_filename(f"user_{current_user.id}.jpg")
+            ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'jpg'
+            filename = secure_filename(f"user_{current_user.id}_{int(datetime.now().timestamp())}.{ext}")
+            
+            # Hapus foto lama jika bukan default
+            if current_user.foto_profil and current_user.foto_profil != 'default.jpg':
+                old_path = os.path.join(PROFILE_FOLDER, current_user.foto_profil)
+                if os.path.exists(old_path):
+                    os.remove(old_path)
+
             file.save(os.path.join(PROFILE_FOLDER, filename))
             current_user.foto_profil = filename
             db.session.commit()
@@ -104,9 +113,71 @@ def update_profile_photo():
 @login_required
 @admin_required
 def admin_dashboard():
-    today = datetime.now().strftime('%Y-%m-%d')
-    logs = Attendance.query.filter(Attendance.timestamp.contains(today)).order_by(Attendance.id.desc()).all()
-    return render_template('admin_dashboard.html', logs=logs)
+    selected_date = request.args.get('date')
+    if not selected_date:
+        selected_date = datetime.now().strftime('%Y-%m-%d')
+        
+    logs = Attendance.query.filter(Attendance.timestamp.contains(selected_date)).order_by(Attendance.id.desc()).all()
+    return render_template('admin_dashboard.html', logs=logs, selected_date=selected_date)
+
+@app.route('/delete_absen/<int:id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_absen(id):
+    log_to_delete = Attendance.query.get_or_404(id)
+    
+    if log_to_delete.image_path:
+        filepath = os.path.join(UPLOAD_FOLDER, log_to_delete.image_path)
+        if os.path.exists(filepath):
+            os.remove(filepath)
+            
+    db.session.delete(log_to_delete)
+    db.session.commit()
+    flash('Data absensi berhasil dihapus!')
+    
+    return redirect(request.referrer or url_for('admin_dashboard'))
+
+@app.route('/export_pdf')
+@login_required
+@admin_required
+def export_pdf():
+    selected_date = request.args.get('date')
+    if not selected_date:
+        selected_date = datetime.now().strftime('%Y-%m-%d')
+        
+    logs = Attendance.query.filter(Attendance.timestamp.contains(selected_date)).order_by(Attendance.id.desc()).all()
+    
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 16)
+    
+    pdf.cell(190, 10, f"Laporan Absensi Harian - PT. Gochem Globalindo", 0, 1, 'C')
+    pdf.set_font("Arial", 'I', 12)
+    pdf.cell(190, 10, f"Tanggal: {selected_date}", 0, 1, 'C')
+    pdf.ln(10)
+    
+    pdf.set_font("Arial", 'B', 10)
+    pdf.cell(50, 10, 'Nama Karyawan', 1, 0, 'C')
+    pdf.cell(40, 10, 'Waktu', 1, 0, 'C')
+    pdf.cell(100, 10, 'Lokasi', 1, 1, 'C')
+    
+    pdf.set_font("Arial", '', 9)
+    for log in logs:
+        nama = log.karyawan.nama_lengkap or log.karyawan.username
+        waktu = log.timestamp.split(' ')[1] if ' ' in log.timestamp else log.timestamp
+        lokasi = log.location_name
+        
+        if len(lokasi) > 60:
+            lokasi = lokasi[:57] + "..."
+            
+        pdf.cell(50, 10, str(nama), 1, 0, 'L')
+        pdf.cell(40, 10, str(waktu), 1, 0, 'C')
+        pdf.cell(100, 10, str(lokasi).encode('latin-1', 'replace').decode('latin-1'), 1, 1, 'L')
+        
+    response = make_response(pdf.output(dest='S').encode('latin-1'))
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename=Data_Absensi_{selected_date}.pdf'
+    return response
 
 @app.route('/absen', methods=['POST'])
 @login_required
@@ -142,6 +213,15 @@ def user():
 @login_required
 @admin_required
 def add_user():
+    # Logika Upload Foto
+    foto_filename = 'default.jpg'
+    if 'foto' in request.files:
+        file = request.files['foto']
+        if file and file.filename != '':
+            ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'jpg'
+            foto_filename = secure_filename(f"profile_{request.form.get('username')}_{int(datetime.now().timestamp())}.{ext}")
+            file.save(os.path.join(PROFILE_FOLDER, foto_filename))
+
     new_user = User(
         username=request.form.get('username'),
         password=request.form.get('password'),
@@ -149,10 +229,12 @@ def add_user():
         nama_lengkap=request.form.get('nama_lengkap'),
         nik=request.form.get('nik'),
         gender=request.form.get('gender'),
-        jabatan=request.form.get('jabatan')
+        jabatan=request.form.get('jabatan'),
+        foto_profil=foto_filename
     )
     db.session.add(new_user)
     db.session.commit()
+    flash('Karyawan berhasil ditambahkan!')
     return redirect(url_for('user'))
 
 @app.route('/delete_user/<int:id>')
@@ -161,8 +243,17 @@ def add_user():
 def delete_user(id):
     user_to_delete = User.query.get_or_404(id)
     if user_to_delete.id != current_user.id:
+        
+        # Bersihkan foto profil di folder agar tidak menumpuk
+        if user_to_delete.foto_profil and user_to_delete.foto_profil != 'default.jpg':
+            old_path = os.path.join(PROFILE_FOLDER, user_to_delete.foto_profil)
+            if os.path.exists(old_path):
+                os.remove(old_path)
+                
+        # Data attendance otomatis terhapus karena 'cascade="all, delete-orphan"' di model User
         db.session.delete(user_to_delete)
         db.session.commit()
+        flash('Data karyawan berhasil dihapus!')
     return redirect(url_for('user'))
 
 @app.route('/update_profile_data', methods=['POST'])
@@ -181,14 +272,37 @@ def update_profile_data():
 @admin_required
 def edit_user(id):
     user = User.query.get_or_404(id)
+    
+    # Logika Upload/Edit Foto Profil
+    if 'foto' in request.files:
+        file = request.files['foto']
+        if file and file.filename != '':
+            ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'jpg'
+            filename = secure_filename(f"profile_{request.form.get('username')}_{int(datetime.now().timestamp())}.{ext}")
+            
+            # Hapus foto lama agar server tidak penuh
+            if user.foto_profil and user.foto_profil != 'default.jpg':
+                old_path = os.path.join(PROFILE_FOLDER, user.foto_profil)
+                if os.path.exists(old_path):
+                    os.remove(old_path)
+                    
+            file.save(os.path.join(PROFILE_FOLDER, filename))
+            user.foto_profil = filename
+
+    # Logika Ubah Password (hanya jika diisi)
+    new_password = request.form.get('password')
+    if new_password and new_password.strip() != '':
+        user.password = new_password
+
     user.username = request.form.get('username')
     user.role = request.form.get('role')
     user.nama_lengkap = request.form.get('nama_lengkap')
     user.nik = request.form.get('nik')
     user.jabatan = request.form.get('jabatan')
     user.gender = request.form.get('gender')
+    
     db.session.commit()
-    flash(f'Data user {user.username} berhasil diupdate!')
+    flash(f'Data karyawan {user.nama_lengkap} berhasil diperbarui!')
     return redirect(url_for('user'))
 
 @app.route('/logout')
