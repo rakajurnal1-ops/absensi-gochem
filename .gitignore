@@ -1,2 +1,15 @@
-instance/
+# Python
 __pycache__/
+*.pyc
+
+# Database
+instance/*.db
+
+# Lingkungan Virtual
+venv/
+env/
+.env
+
+# Folder Foto (Opsional: Jika tidak ingin data foto lokal ikut terupload)
+# static/uploads/*
+# static/profiles/*

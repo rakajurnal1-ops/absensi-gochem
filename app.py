@@ -11,14 +11,25 @@ from fpdf import FPDF
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'gochem_globalindo_2026_pro_secure'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///gochem_attendance.db'
+
+# =========================================================================
+# PERBAIKAN PATH UNTUK PYTHONANYWHERE (ABSOLUTE PATH)
+# =========================================================================
+basedir = os.path.abspath(os.path.dirname(__file__))
+
+# Database disimpan di dalam folder 'instance' dengan alamat absolut
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'instance', 'gochem_attendance.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Folder untuk Upload Absensi dan Foto Profil
-UPLOAD_FOLDER = os.path.join('static', 'uploads')
-PROFILE_FOLDER = os.path.join('static', 'profiles')
+# Folder untuk Upload Absensi dan Foto Profil dengan alamat absolut
+UPLOAD_FOLDER = os.path.join(basedir, 'static', 'uploads')
+PROFILE_FOLDER = os.path.join(basedir, 'static', 'profiles')
+
+# Pastikan semua folder dibuat otomatis oleh server jika belum ada
+os.makedirs(os.path.join(basedir, 'instance'), exist_ok=True)
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(PROFILE_FOLDER, exist_ok=True)
+# =========================================================================
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
@@ -186,6 +197,8 @@ def absen():
     try:
         lat, lon = data.get('latitude'), data.get('longitude')
         try:
+            # Catatan: Akun gratis PythonAnywhere membatasi akses API luar.
+            # Jika geolocator gagal/lambat, try-except ini akan mengamankan agar tidak crash.
             location = geolocator.reverse(f"{lat}, {lon}", language='id')
             alamat = location.address if location else "Lokasi tidak terdeteksi"
         except:
@@ -194,7 +207,8 @@ def absen():
         image_data = data['image'].split(",")[1]
         filename = f"{current_user.username}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
         filepath = os.path.join(UPLOAD_FOLDER, filename)
-        with open(filepath, "wb") as fh: fh.write(base64.b64decode(image_data))
+        with open(filepath, "wb") as fh: 
+            fh.write(base64.b64decode(image_data))
         
         new_attendance = Attendance(user_id=current_user.id, timestamp=datetime.now().strftime('%Y-%m-%d %H:%M:%S'), latitude=str(lat), longitude=str(lon), location_name=alamat, image_path=filename)
         db.session.add(new_attendance)
@@ -213,7 +227,6 @@ def user():
 @login_required
 @admin_required
 def add_user():
-    # Logika Upload Foto
     foto_filename = 'default.jpg'
     if 'foto' in request.files:
         file = request.files['foto']
@@ -243,14 +256,11 @@ def add_user():
 def delete_user(id):
     user_to_delete = User.query.get_or_404(id)
     if user_to_delete.id != current_user.id:
-        
-        # Bersihkan foto profil di folder agar tidak menumpuk
         if user_to_delete.foto_profil and user_to_delete.foto_profil != 'default.jpg':
             old_path = os.path.join(PROFILE_FOLDER, user_to_delete.foto_profil)
             if os.path.exists(old_path):
                 os.remove(old_path)
                 
-        # Data attendance otomatis terhapus karena 'cascade="all, delete-orphan"' di model User
         db.session.delete(user_to_delete)
         db.session.commit()
         flash('Data karyawan berhasil dihapus!')
@@ -273,14 +283,12 @@ def update_profile_data():
 def edit_user(id):
     user = User.query.get_or_404(id)
     
-    # Logika Upload/Edit Foto Profil
     if 'foto' in request.files:
         file = request.files['foto']
         if file and file.filename != '':
             ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'jpg'
             filename = secure_filename(f"profile_{request.form.get('username')}_{int(datetime.now().timestamp())}.{ext}")
             
-            # Hapus foto lama agar server tidak penuh
             if user.foto_profil and user.foto_profil != 'default.jpg':
                 old_path = os.path.join(PROFILE_FOLDER, user.foto_profil)
                 if os.path.exists(old_path):
@@ -289,7 +297,6 @@ def edit_user(id):
             file.save(os.path.join(PROFILE_FOLDER, filename))
             user.foto_profil = filename
 
-    # Logika Ubah Password (hanya jika diisi)
     new_password = request.form.get('password')
     if new_password and new_password.strip() != '':
         user.password = new_password
@@ -310,5 +317,6 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+# PythonAnywhere akan mengabaikan blok ini karena mereka menggunakan file WSGI eksternal.
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
